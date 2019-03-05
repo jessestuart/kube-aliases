@@ -1,10 +1,8 @@
+#!/usr/bin/env zsh
+
 KALIAS=$ZSH_CUSTOM/plugins/kube-aliases
 KRESOURCES=$ZSH_CUSTOM/plugins/kube-aliases/docs/resources
 SHELL_NAME=$(basename $SHELL)
-
-# Auto complete, for bash replace zsh with bash
-# For some reason this is sourcing the oh-my-zsh plugin.
-source <(kubectl completion $SHELL_NAME)
 
 # Contexts
 alias kcc='kubectl config get-contexts'
@@ -198,17 +196,8 @@ alias kgsy='kubectl get services -o yaml'
 alias kgss='kubectl get statefulsets'
 
 # Execute a command in a specified pod, default drops user into the shell
-kcexec () {
+kexec() {
   kubectl exec -it $1 ${2:-bash}
-}
-kexec () {
-  kubectl exec -it $1 ${2:-bash}
-}
-
-# Set and use a new context
-knc () {
-  kc config set-context $1
-  kc config use-context $1
 }
 
 # TODO: kpf name conflict from sourcing autocomplete
@@ -217,65 +206,65 @@ knc () {
 # }
 
 # Get all resources (e.g. pod) in all namespaces
-get_cluster_resources () {
-  kubectl get $1 -o wide --all-namespaces ${@:2}
+get_cluster_resources() {
+  kubectl get $1 -o wide --all-namespaces "${@:2}"
 }
 
 # TODO: Go through all resources.
 # Find a resource (e.g. a pod by name)
-kfind () {
+kfind() {
 
   # kubectl get all --all-namespaces | grep -i -E --color=always "${@}|$"
   sed 1d $KRESOURCES | while read resource; do
-    kubectl get $resource --all-namespaces -o wide 2>/dev/null | \
+    kubectl get $resource --all-namespaces -o wide 2>/dev/null |
       $KALIAS/src/kfind.awk -v regex="${1}" -v resourcetype="${resource}"
   done
 
-#   local custom=$(kubectl get customresourcedefinition)
-#   echo $custom | while read resource; do
-#     kubectl get "${resource}" --all-namespaces -o wide | \
-#       $KALIAS/src/kfind.awk -v regex="${1}" -v resourcetype="${resource}"
+  #   local custom=$(kubectl get customresourcedefinition)
+  #   echo $custom | while read resource; do
+  #     kubectl get "${resource}" --all-namespaces -o wide | \
+  #       $KALIAS/src/kfind.awk -v regex="${1}" -v resourcetype="${resource}"
   # done
 }
 
 # Start a restart on pods, will follow the rolling release policy
-krd () {
-  kubectl patch deployment ${1} -p "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}"
+krd() {
+  kubectl patch deployment ${1} -p "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"$(date +'%s')\"}}}}}"
 }
 
 # Search pods using regular expression
-kpfind () {
+kpfind() {
 
-  column -t <<< $(kubectl get pods --all-namespaces -o wide | \
+  column -t <<<$(kubectl get pods --all-namespaces -o wide |
     $KALIAS/src/kpfind.awk -v regex="${1}")
 
 }
 
 # Display help
-khelp () {
+khelp() {
 
-case $1 in
-  commands|cmd|usage)
+  case $1 in
+  commands | cmd | usage)
     cat $KALIAS/docs/usage
-  ;;
-  resources|res)
+    ;;
+  resources | res)
     cat $KALIAS/docs/resources
     kubectl get customresourcedefinition | awk 'NR>1 {print $1}'
-  ;;
+    ;;
   *)
     echo "usage: khelp (cmd|res)"
-  ;;
-esac
+    ;;
+  esac
 
 }
 
 # Get the pod names (just the names) of all pods in a namespace.
-kgpns () {
+kgpns() {
   echo $(kubectl get pods -o go-template --template '{{range .items}}{{.metadata.name}}{{" "}}{{end}}')
 }
 
 # Delete all pods within a namespace.
-kdap () {
+kdap() {
 
   if [ $SHELL_NAME = zsh ]; then
     read "kdelete?This will attempt to delete all pods within the namespace. Do you want to continue?(y/N) "
@@ -289,7 +278,7 @@ kdap () {
 }
 
 # Drain node
-kdrain () {
+kdrain() {
 
   if [ $SHELL_NAME = zsh ]; then
     read "kdrainnode? This will drain the node ${1}, delete local data, and ignore daemonsets. Do you want to continue?(y/N) "
@@ -303,7 +292,7 @@ kdrain () {
 }
 
 # Intended to be a private function
-_cp_config_sed_config () {
+_cp_config_sed_config() {
   local resource=${1}
   local name=${2}
   cp ${KALIAS}/include/${1}.yaml ${name}-${resource}.yaml
@@ -311,15 +300,14 @@ _cp_config_sed_config () {
 }
 
 # Create config
-kcon () {
+kcon() {
   local configPath=$KALIAS/include/
   # Structured after stack exchange
   iPOSITIONAL=()
-  while [[ $# -gt 0 ]]
-  do
-  key="$1"
+  while [[ $# -gt 0 ]]; do
+    key="$1"
 
-  case $key in
+    case $key in
     -a)
       local resources=(configmap deployment ingress namespace service)
       for resource in $resources; do
@@ -366,7 +354,7 @@ kcon () {
 
       shift # past argument
       ;;
-  esac
+    esac
   done
   set -- "${POSITIONAL[@]}" # restore positional parameters
 }
