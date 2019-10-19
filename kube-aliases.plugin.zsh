@@ -1,7 +1,9 @@
 #!/usr/bin/env zsh
 
-KALIAS=$ZSH_CUSTOM/plugins/kube-aliases
-KRESOURCES=$ZSH_CUSTOM/plugins/kube-aliases/docs/resources
+ANTIBODY_ROOT=$(antibody home)
+PLUGIN_ROOT="${ANTIBODY_ROOT}/https-COLON--SLASH--SLASH-github.com-SLASH-jessestuart-SLASH-kube-aliases"
+KALIAS=$PLUGIN_ROOT
+KRESOURCES=$PLUGIN_ROOT/docs/resources
 SHELL_NAME=$(basename $SHELL)
 
 # Contexts
